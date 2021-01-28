@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bouncing balls animation</title>
+<style>
+	
+	input[type=text] {
+		width: 100px;
+		margin-bottom: 5px;
+		float: center;
+}
+	input[type=number] {
+	width: 50px;
+	margin-bottom: 5px;
+	float: center;
+}
+	select {
+		width: 100px;
+		margin-bottom: 5px;
+	}
+</style>
+</head>
+<body>
+	<h2>Bouncing balls!</h2>		
+	
+		<div style="width: 1000px; float: left;">
+	
+		<canvas id="container" height=600 width=1000 style="border: 1px solid;"></canvas>
+</div>
+	
+	<div style="width: 325px; height: 590px; margin-left: 1020px; padding: 10px 0px 0px 10px; border: 1px solid;">
+	
+	<div style="width: 100px; float: left; margin-bottom: 20px;">
+	
+		<input type="radio" id="add" 
+		name="ballOpt" checked="checked" onclick="updateForm(this)">
+		<label for="add">Add a Ball</label>
+</div>
+	
+		<div style="width: 120px; margin-left: 110px;margin-bottom: 20px;">
+		
+		<input type="radio" id="radio_updateball" 
+		name="ballOpt" onclick="updateForm(this)">
+		<label for="radio_updateball">Update a Ball</label>
+</div>
+	
+	<div id="add_ball" style="display: block; height: 175px;">
+	
+		<label for="add_name">Name</label>
+		<input type="text" id="add_name" name="add_name"><br>
+
+		<label for="add_radius">Radius</label>
+		<input type="number" id="add_radius" name="add_radius" min="10" max="50">
+		(10 to 50)<br>
+
+		<label for="add_speed">Speed</label>
+		<input type="number" id="add_speed" name="add_speed" min="0" max="25"> 
+		(0-Stop to 25-Super Fast)<br><br>
+
+		<button type="button" onclick="addBall()">Add Ball</button>
+
+</div>
+		
+		<div id="update_ball" style="display: none;  height: 175px;">
+		
+
+		<label for="select_ball">Select a ball</label>
+		<select name="select_ball" id="select_ball" onchange="updateSelection()">
+	</select><br>
+
+	<label for="update_name">Name</label>
+	<input type="text" id="update_name" name="update_name"><br>
+
+	<label for="update_radius">Radius</label>
+	<input type="number" id="update_radius" name="update_radius" min="10" max="50">
+	(10 to 50)<br>
+
+	<label for="update_speed">Speed</label>
+		<input type="number" id="update_speed" name="update_speed" min="0" max="25"> 
+		(0-Stop to 25-Super Fast)<br><br>
+
+	<button type="button" onclick="updateBall()">Update Ball</button>
+</div>
+	
+		<div style="text-align: center;">
+		
+		<button type="button" onclick="stopAnimation()">Stop all Balls</button>
+</div>
+		<div style="text-align: center; margin-top: 320px">
+				
+</div>
+</div>
+
+<script>
+		class Ball {
+			color = 0; <!-- The current color based on the ball's direction -->
+			movingDown = true; <!-- Is ball moving towards the bottom of canvas -->
+			movingRight = true; <!-- Is ball moving towards the right of canvas -->
+			name = ""; <!-- The name assigned to the ball -->
+			radius = 0; <!-- The radius assigned to the ball -->
+			speed = 0; <!-- The speed assigned to the ball -->
+			xPos = 0; <!-- The current horizontal position of the ball -->
+			yPos = 0; <!-- The current vertical position of the ball -->
+				
+			constructor(name, radius, speed) {
+				this.name = name;
+					//error checks
+		if (isNaN(radius) || radius < 10) {
+					radius = 10;
+} else if (radius > 50) {
+					radius = 50;
+}
+		if (isNaN(speed) || speed < 0) {
+				speed = 0;
+} else if (speed > 25) {
+				speed = 25;
+}
+			this.radius = radius;
+			this.speed = speed;
+			this.xPos = Math.floor(Math.random() * (MAX_WIDTH - radius * 2));
+			this.yPos = Math.floor(Math.random() * (MAX_HEIGHT - radius * 2));
+      }
+			<!-- Getters and setters -->
+			get name() { return this.name; }
+				
+			get radius() { return this.radius; }
+				
+			get speed() { return this.speed; }
+				
+			set name(name) { this.name = name; }
+								
+			set radius(radius) { this.radius = radius; }
+				
+			set speed(speed) { this.speed = speed; }
+				
+		<!-- Determine if the ball's direction needs to change -->
+			
+			checkForWallCollision() {
+			if (this.xPos <= 0 && !this.movingRight) {
+				// collision with left wall
+					this.movingRight = true;
+	} else if (this.xPos >= (MAX_WIDTH - this.radius * 2) && this.movingRight) {
+				// collision with right wall
+				this.movingRight = false;
+	}
+
+	if (this.yPos <= 0 && !this.movingDown) {
+			// collision with top wall
+			this.movingDown = true;
+} else if (this.yPos >= (MAX_HEIGHT - this.radius * 2) && this.movingDown) {
+			// collision with down wall
+			this.movingDown = false;
+}
+			this.updateColor();
+}
+	
+			draw(canvas) {
+				this.checkForWallCollision();
+				this.updatePosition();
+
+		canvas.beginPath();
+		canvas.fillStyle = COLORS[this.color];
+		canvas.arc(this.xPos + this.radius, 
+			this.yPos + this.radius, 
+			this.radius, 0, 2* Math.PI);
+			canvas.fill();
+
+			canvas.fillStyle = "white";
+			canvas.font = "bold 14pt Calibri";
+			canvas.fillText(this.name, 
+				this.xPos + this.radius - 5, 
+				this.yPos + this.radius + 5);
+}
+				
+		
+			updateColor() {
+			if (this.movingRight && this.movingDown) {
+				this.color = 0;  // red
+} else if (!this.movingRight && this.movingDown) {
+				this.color = 1;  // green
+} else if (this.movingRight && !this.movingDown) {
+				this.color = 2;  // blue
+} else if (!this.movingRight && !this.movingDown) {
+				this.color = 3;  // yellow
+}
+}
+				
+	<!-- Update the ball's position based on its direction and speed -->
+		updatePosition() {
+			if (this.movingRight) {
+				this.xPos += this.speed;
+} else {
+				// moving left
+				this.xPos -= this.speed;
+}
+			if (this.movingDown) {
+					this.yPos += this.speed;
+} else {
+				// moving up
+					this.yPos -= this.speed;
+}
+	}
+}
+		const BALLS = []; <!-- Array to hold the balls added to the canvas -->
+		const COLORS = ["red", "green", "blue", "yellow"];
+		const MAX_WIDTH = 1000; <!-- Width of the canvas defined in the HTML above -->
+		const MAX_HEIGHT = 600; <!-- Height of the canvas defined in the HTML above -->
+		<!-- Creates timer to automate the animation -->
+		<!-- The timer repeats every 10 milliseconds -->
+		const TIMER = setInterval(updateCanvas, 10, document.getElementById("container").getContext("2d"));
+
+		updateAddBallForm(); <!-- Prefills data in the Add a Ball fields -->
+			
+<!-- Creates a new ball and adds it to the BALLS array -->
+	function addBall() {
+		var name   = document.getElementById('add_name').value;
+		var radius = parseInt(document.getElementById('add_radius').value);
+		var speed  = parseInt(document.getElementById('add_speed').value);
+
+		var ball = new Ball(name, radius, speed);
+			BALLS.push(ball);
+			updateSelectList();
+			updateAddBallForm();
+}
+
+	<!-- Turns the timer off to stop the animation -->
+		function stopAnimation() {
+			clearInterval(TIMER);
+}
+			
+<!-- Prefills data in the Add a Ball fields -->
+	function updateAddBallForm() {
+		document.getElementById('add_name').value = BALLS.length + 1;
+		document.getElementById('add_radius').value = 25;
+		document.getElementById('add_speed').value = 5;
+}
+
+<!-- Updates the selected ball with the data in the Update a Ball fields -->
+	function updateBall() {
+		var idx = document.getElementById('select_ball').selectedIndex;
+
+		var name   = document.getElementById('update_name').value;
+		var radius = parseInt(document.getElementById('update_radius').value);
+		var speed  = parseInt(document.getElementById('update_speed').value);
+
+if (idx >= 0) {
+	var ball = BALLS[idx];
+			ball.name = name;
+			ball.radius = radius;
+			ball.speed = speed;
+}
+	}
+			
+<!-- Draws the next frame of animation on the canvas -->
+	function updateCanvas(canvas) {
+		// clear previous canvas and redraw all the balls
+		canvas.clearRect(0, 0, MAX_WIDTH, MAX_HEIGHT);
+	for (var i = 0; i < BALLS.length; i++) {
+			BALLS[i].draw(canvas);
+	}
+}
+
+<!-- Display the fields of the the selected form: Add a Ball or Update a Ball -->			
+	function updateForm(control) {
+		let addBall    = document.getElementById("add_ball");
+		let updateBall = document.getElementById("update_ball");
+		let addOption  = document.getElementById("add");
+			if (addOption.checked) {
+				addBall.style.display    = 'block';
+				updateBall.style.display = 'none';
+} else {
+			addBall.style.display    = 'none';
+			updateBall.style.display = 'block';
+			updateSelection();
+}
+}
+			
+		function updateSelection() {
+			var idx = document.getElementById('select_ball').selectedIndex;
+			let updateName = document.getElementById('update_name');
+			let updateRadius = document.getElementById('update_radius');
+			let updateSpeed = document.getElementById('update_speed');
+
+	if (idx >= 0) {
+			var ball = BALLS[idx];
+			updateName.value = ball.name;
+			updateRadius.value = ball.radius;
+			updateSpeed.value = ball.speed;
+ }
+}
+			
+
+	function updateSelectList() {
+		let select = document.getElementById('select_ball');
+		// remove all options
+		while (select.options.length) select.remove(0);
+
+		// update ball names from BALLS array
+		for (var i = 0; i < BALLS.length; i++) {
+			var opt = document.createElement('option');
+			opt.text = BALLS[i].name;
+			select.add(opt);
+}
+}
+</script>
+</body>
+</html>
